@@ -117,7 +117,7 @@ class MoveFiles(SimpleTask):
         SimpleTask.__init__(self, "MoveFiles")
 
     def process(self, item):
-        os.rename("%(data_dir)s/%(item_name)s.warc.gz" % item,
+        os.rename("%(item_dir)s/%(item_name)s.warc.gz" % item,
               "$(data_dir)/%(item_name)s.warc.gz" % item)
 
         shutil.rmtree("%(item_dir)s" % item)
@@ -131,8 +131,7 @@ class WgetArgs(object):
             '-U', 'ArchiveTeam; Googlebot/2.1',
             '--tries', '5',
             '--waitretry', '5',
-			'--delete-after',
-			'--quiet',
+            '--delete-after',
             '-O', ItemInterpolation("%(item_dir)s/%(item_name)s.warc.gz"),
 		]
         list_url = 'http://master.newsbuddy.net/webcite/' + item_name

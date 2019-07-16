@@ -178,9 +178,7 @@ class WgetArgs(object):
             '--truncate-output',
             '-e', 'robots=off',
             '--rotate-dns',
-            '--recursive', '--level=inf',
             '--no-parent',
-            '--page-requisites',
             '--timeout', '30',
             '--tries', 'inf',
             '--span-hosts',
@@ -204,16 +202,14 @@ class WgetArgs(object):
 
         for url in items.body.splitlines():
             url = url.strip()
-            print(url)
             wget_args.append(url)
-
+        http_client.close()
         if 'bind_address' in globals():
             wget_args.extend(['--bind-address', globals()['bind_address']])
             print('')
             print('*** Wget will bind address at {0} ***'.format(
             globals()['bind_address']))
             print('')
-
         return realize(wget_args, item)
 
 ###########################################################################
@@ -240,7 +236,6 @@ pipeline = Pipeline(
         accept_on_exit_code=[0, 4, 8],
         env={
             'item_dir': ItemValue('item_dir'),
-            'item_value': ItemValue('item_value'),
             'warc_file_base': ItemValue('warc_file_base'),
         }
     ),

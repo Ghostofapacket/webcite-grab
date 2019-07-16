@@ -118,7 +118,7 @@ class MoveFiles(SimpleTask):
 
     def process(self, item):
         os.rename("%(item_dir)s/%(item_name)s.warc.gz" % item,
-              "$(data_dir)/%(item_name)s.warc.gz" % item)
+              "%(data_dir)/%(item_name)s.warc.gz" % item)
 
         shutil.rmtree("%(item_dir)s" % item)
 

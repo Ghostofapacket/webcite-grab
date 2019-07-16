@@ -24,12 +24,9 @@ from seesaw.pipeline import Pipeline
 from seesaw.project import Project
 from seesaw.util import find_executable
 
-
-
 # check the seesaw version
 if StrictVersion(seesaw.__version__) < StrictVersion('0.8.5'):
     raise Exception('This pipeline needs seesaw version 0.8.5 or higher.')
-
 
 ###########################################################################
 # Find a useful Wget+Lua executable.
@@ -53,7 +50,6 @@ WGET_LUA = find_executable(
 
 if not WGET_LUA:
     raise Exception('No usable Wget+Lua found.')
-
 
 ###########################################################################
 # The version number of this pipeline definition.
@@ -122,7 +118,7 @@ class PrepareDirectories(SimpleTask):
 
         item['item_dir'] = dirname
         item['warc_file_base'] = '%s-%s-%s' % (self.warc_prefix, escaped_item_name[:50],
-            time.strftime('%Y%m%d-%H%M%S'))
+                                               time.strftime('%Y%m%d-%H%M%S'))
 
         open('%(item_dir)s/%(warc_file_base)s.warc.gz' % item, 'w').close()
 
@@ -137,7 +133,7 @@ class MoveFiles(SimpleTask):
             raise Exception('Please compile wget with zlib support!')
 
         os.rename('%(item_dir)s/%(warc_file_base)s.warc.gz' % item,
-              '%(data_dir)s/%(warc_file_base)s.warc.gz' % item)
+                  '%(data_dir)s/%(warc_file_base)s.warc.gz' % item)
 
         shutil.rmtree('%(item_dir)s' % item)
 
@@ -146,8 +142,10 @@ def get_hash(filename):
     with open(filename, 'rb') as in_file:
         return hashlib.sha1(in_file.read()).hexdigest()
 
+
 CWD = os.getcwd()
 PIPELINE_SHA1 = get_hash(os.path.join(CWD, 'pipeline.py'))
+
 
 def stats_id_function(item):
     # NEW for 2014! Some accountability hashes and stats.
@@ -192,30 +190,32 @@ class WgetArgs(object):
             '--warc-header', 'theartistunion-dld-script-version: ' + VERSION,
             '--warc-header', ItemInterpolation('webcite-item: %(item_name)s')
         ]
-		
-		item_name = item['item_name']
-        http_client = httpclient.HTTPClient()
-        
-		try:
-		    items = http_client.fetch('http://master.newsbuddy.net/webcite/' + item_name, method='GET')
-		except httpclient.HTTPError as error:
-		    items = error.response
-		if items.code != 200:
-                raise Exception('Bad status code, {} for item {}.'.format(r.code, item_name))
-        for url in items.body.splitlines():
-            url = url.strip()
-			print(url)
-            wget_args.append(url)
-		
 
-        if 'bind_address' in globals():
-            wget_args.extend(['--bind-address', globals()['bind_address']])
-            print('')
-            print('*** Wget will bind address at {0} ***'.format(
-                globals()['bind_address']))
-            print('')
+        item_name = item['item_name']
 
-        return realize(wget_args, item)
+    http_client = httpclient.HTTPClient()
+
+    try:
+        items = http_client.fetch('http://master.newsbuddy.net/webcite/' + item_name, method='GET')
+    except httpclient.HTTPError as error:
+        items = error.response
+    if items.code != 200:
+        raise Exception('Bad status code, {} for item {}.'.format(r.code, item_name))
+
+
+for url in items.body.splitlines():
+    url = url.strip()
+    print(url)
+wget_args.append(url)
+
+if 'bind_address' in globals():
+    wget_args.extend(['--bind-address', globals()['bind_address']])
+    print('')
+    print('*** Wget will bind address at {0} ***'.format(
+        globals()['bind_address']))
+    print('')
+
+return realize(wget_args, item)
 
 ###########################################################################
 # Initialize the project.
@@ -223,8 +223,8 @@ class WgetArgs(object):
 # This will be shown in the warrior management panel. The logo should not
 # be too big. The deadline is optional.
 project = Project(
-    title = 'webcite',
-    project_html = '''
+    title='webcite',
+    project_html='''
     <img class="project-logo" alt="logo" src="https://www.archiveteam.org/images/8/8a/Archivetime.png" height="50px"/>
     <h2>webcite.com <span class="links"><a href="https://www.webcite.com">Website</a> &middot; <a href="http://tracker.archiveteam.org/webcite/">Leaderboard</a></span></h2>
     '''
@@ -233,7 +233,7 @@ project = Project(
 pipeline = Pipeline(
     CheckIP(),
     GetItemFromTracker('http://%s/%s' % (TRACKER_HOST, TRACKER_ID), downloader,
-        VERSION),
+                       VERSION),
     PrepareDirectories(warc_prefix='webcite'),
     WgetDownload(
         WgetArgs(),
@@ -256,23 +256,23 @@ pipeline = Pipeline(
     ),
     MoveFiles(),
     LimitConcurrent(NumberConfigValue(min=1, max=20, default='20',
-        name='shared:rsync_threads', title='Rsync threads',
-        description='The maximum number of concurrent uploads.'),
-        UploadWithTracker(
-            'http://%s/%s' % (TRACKER_HOST, TRACKER_ID),
-            downloader=downloader,
-            version=VERSION,
-            files=[
-                ItemInterpolation('%(data_dir)s/%(warc_file_base)s.warc.gz')
-            ],
-            rsync_target_source_path=ItemInterpolation('%(data_dir)s/'),
-            rsync_extra_args=[
-                '--recursive',
-                '--partial',
-                '--partial-dir', '.rsync-tmp',
-            ]
-        ),
-    ),
+                                      name='shared:rsync_threads', title='Rsync threads',
+                                      description='The maximum number of concurrent uploads.'),
+                    UploadWithTracker(
+                        'http://%s/%s' % (TRACKER_HOST, TRACKER_ID),
+                        downloader=downloader,
+                        version=VERSION,
+                        files=[
+                            ItemInterpolation('%(data_dir)s/%(warc_file_base)s.warc.gz')
+                        ],
+                        rsync_target_source_path=ItemInterpolation('%(data_dir)s/'),
+                        rsync_extra_args=[
+                            '--recursive',
+                            '--partial',
+                            '--partial-dir', '.rsync-tmp',
+                        ]
+                    ),
+                    ),
     SendDoneToTracker(
         tracker_url='http://%s/%s' % (TRACKER_HOST, TRACKER_ID),
         stats=ItemValue('stats')

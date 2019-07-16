@@ -54,9 +54,9 @@ if not PYTHON35_EXE:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = "20190713.01"
+VERSION = "20190716.01"
 TRACKER_ID = 'webcite'
-TRACKER_HOST = 'tracker.kiska.pw'
+TRACKER_HOST = 'tracker.archiveteam.org'
 
 
 ###########################################################################

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import re
+import requests
 from subprocess import call
 
 sys.path.insert(0, os.getcwd())
@@ -116,8 +117,8 @@ class MoveFiles(SimpleTask):
         SimpleTask.__init__(self, "MoveFiles")
 
     def process(self, item):
-        os.rename("%(data_dir)s/%(item_name)s.deduplicated.warc.gz" % item,
-              "data/completed/%(item_name)s.warc.gz" % item)
+        os.rename("%(data_dir)s/%(item_name)s.warc.gz" % item,
+              "$(data_dir)/%(item_name)s.warc.gz" % item)
 
         shutil.rmtree("%(item_dir)s" % item)
 
@@ -130,8 +131,9 @@ class WgetArgs(object):
             '-U', 'ArchiveTeam; Googlebot/2.1',
             '--tries', '5',
             '--waitretry', '5',
-			'--delete-faster',
-            '-O', ItemInterpolation("%(item_dir)s/%(warc_file_base)s.warc.gz"),
+			'--delete-after',
+			'--quiet',
+            '-O', ItemInterpolation("%(item_dir)s/%(item_name)s.warc.gz"),
 		]
         list_url = 'http://master.newsbuddy.net/webcite/' + item_name
         list_data = requests.get(list_url)
@@ -139,10 +141,10 @@ class WgetArgs(object):
         if list_data.status_code == 200:
             for url in list_data.text.splitlines():
                 url = url.strip()
-                wpull_args.append(url)
+                wget_args.append(url)
 		
-		if 'bind_address' in globals():
-            wpull_args.extend(['--bind-address', globals()['bind_address']])
+        if 'bind_address' in globals():
+            wget_args.extend(['--bind-address', globals()['bind_address']])
             print('')
             print('*** Wpull will bind address at {0} ***'.format(
                 globals()['bind_address']))
@@ -199,7 +201,7 @@ pipeline = Pipeline(
         defaults={"downloader": downloader, "version": VERSION},
         file_groups={
             "data": [
-                 ItemInterpolation("%(data_dir)s/%(item_name)s.warc.gz")
+                 ItemInterpolation("%(item_dir)s/%(item_name)s.warc.gz")
             ]
         },
         id_function=stats_id_function,
@@ -214,7 +216,7 @@ pipeline = Pipeline(
             downloader=downloader,
             version=VERSION,
             files=[
-                ItemInterpolation("%(data_dir)s/%(warc_file_base)s.warc.gz")
+                ItemInterpolation("%(data_dir)s/%(item_name)s.warc.gz")
             ],
             rsync_target_source_path=ItemInterpolation("%(data_dir)s/"),
             rsync_extra_args=[
@@ -223,9 +225,7 @@ pipeline = Pipeline(
                 "--partial-dir", ".rsync-tmp",
             ]
         ),
-        ),
     ),
-    DeleteFiles(),
     SendDoneToTracker(
         tracker_url="http://%s/%s" % (TRACKER_HOST, TRACKER_ID),
         stats=ItemValue("stats")

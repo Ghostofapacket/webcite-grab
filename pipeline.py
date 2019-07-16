@@ -193,29 +193,28 @@ class WgetArgs(object):
 
         item_name = item['item_name']
 
-    http_client = httpclient.HTTPClient()
+        http_client = httpclient.HTTPClient()
 
-    try:
-        items = http_client.fetch('http://master.newsbuddy.net/webcite/' + item_name, method='GET')
-    except httpclient.HTTPError as error:
-        items = error.response
-    if items.code != 200:
-        raise Exception('Bad status code, {} for item {}.'.format(r.code, item_name))
+        try:
+            items = http_client.fetch('http://master.newsbuddy.net/webcite/' + item_name, method='GET')
+        except httpclient.HTTPError as error:
+            items = error.response
+        if items.code != 200:
+            raise Exception('Bad status code, {} for item {}.'.format(r.code, item_name))
 
+        for url in items.body.splitlines():
+            url = url.strip()
+            print(url)
+            wget_args.append(url)
 
-for url in items.body.splitlines():
-    url = url.strip()
-    print(url)
-wget_args.append(url)
+        if 'bind_address' in globals():
+            wget_args.extend(['--bind-address', globals()['bind_address']])
+            print('')
+            print('*** Wget will bind address at {0} ***'.format(
+            globals()['bind_address']))
+            print('')
 
-if 'bind_address' in globals():
-    wget_args.extend(['--bind-address', globals()['bind_address']])
-    print('')
-    print('*** Wget will bind address at {0} ***'.format(
-        globals()['bind_address']))
-    print('')
-
-return realize(wget_args, item)
+        return realize(wget_args, item)
 
 ###########################################################################
 # Initialize the project.
